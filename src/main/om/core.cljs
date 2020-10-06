@@ -180,7 +180,7 @@
 (defn ^:private children [node]
   (let [c (.. node -props -children)]
     (if (ifn? c)
-      (set! (.. node -props -children) (c node))
+      (c node)
       c)))
 
 (defn get-props
@@ -292,7 +292,6 @@
                            (when (satisfies? IInitState c)
                              (init-state c))
                            (dissoc istate ::id))}]
-         (aset props "__om_init_state" nil)
          ret)))
    :shouldComponentUpdate
    (fn [next-props next-state]
