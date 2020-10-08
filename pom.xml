@@ -17,7 +17,7 @@
     <url>https://github.com/capital-match/om</url>
     <connection>scm:git:git://github.com/capital-match/om.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/capital-match/om.git</developerConnection>
-    <tag>67599b21047d0974c727dd7a0836719cabeedeae</tag>
+    <tag>54056893f28bd48a0427fa4105c0532093b6b1c5</tag>
   </scm>
   <build>
     <sourceDirectory>src/main</sourceDirectory>
