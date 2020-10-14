@@ -3,7 +3,7 @@
   <groupId>org.omcljs</groupId>
   <artifactId>om</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.0-beta4</version>
+  <version>1.0.0-beta4-cm</version>
   <name>om</name>
   <description>ClojureScript interface to Facebook's React</description>
   <url>http://github.com/swannodette/om</url>
@@ -17,7 +17,7 @@
     <url>https://github.com/capital-match/om</url>
     <connection>scm:git:git://github.com/capital-match/om.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/capital-match/om.git</developerConnection>
-    <tag>54056893f28bd48a0427fa4105c0532093b6b1c5</tag>
+    <tag>508950413fbd796c03437c31445409156b7e292a</tag>
   </scm>
   <build>
     <sourceDirectory>src/main</sourceDirectory>

@@ -1,10 +1,8 @@
-(defproject org.omcljs/om "1.0.0-beta4"
+(defproject org.omcljs/om "1.0.0-beta4-cm"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-
-  :repositories [["clojars" {:sign-releases false}]]
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx512m" "-server"]
 
