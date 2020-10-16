@@ -1292,7 +1292,7 @@
 (defn build-ext
   [f state set-state opts]
   (let [cursor (JSStateCursor. state set-state [])]
-   (build f cursor {:opts opts})))
+   (build f cursor opts)))
 
 (defn detach-root
   "Given a DOM target remove its render loop if one exists."
