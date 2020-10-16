@@ -435,9 +435,45 @@
       ([this ks]
          (get-in (-get-state this) ks)))))
 
+(defn state-conv
+  [state]
+  (js->clj state :keywordize-keys true))
+
+(defn specify-state-ext-methods! [obj]
+  (specify! obj
+    ISetState
+    (-set-state!
+      ([this val render]
+       (.setState this (clj->js val)))
+      ([this ks val render]
+       (js/console.log "State")
+       (js/console.log (.-state this))
+       (js/console.log (state-conv (.-state this)))
+       (let [state (state-conv (.-state this))]
+         (.setState this (clj->js (assoc-in state ks val))))))
+    IGetRenderState
+    (-get-render-state
+      ([this]
+       (state-conv (.-state this)))
+      ([this ks]
+         (get-in (state-conv (.-state this)) ks)))
+    IGetState
+    (-get-state
+     ([this]
+      (state-conv (.-state this)))
+     ([this ks]
+      (get-in (state-conv (.-state this)) ks)))))
 
 (def pure-descriptor
   (specify-state-methods! (clj->js pure-methods)))
+
+(def pure-ext-descriptor
+  (specify-state-ext-methods! (clj->js (dissoc (assoc pure-methods
+                                                      :getInitialState (fn [] 
+                                                                         (this-as this
+                                                                                  (let [c (children this)]
+                                                                                    (when (satisfies? IInitState c)
+                                                                                      (clj->js (init-state c))))))) :componentWillMount))))
 
 ;; =============================================================================
 ;; EXPERIMENTAL: No Local State
@@ -725,10 +761,6 @@
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (-pr-writer value writer opts)))
-
-(defn state-conv
-  [state]
-  (js->clj state :keywordize-keys true))
 
 (deftype JSStateCursor [state set-state path]
   IDeref
@@ -1292,7 +1324,8 @@
 (defn build-ext
   [f state set-state opts]
   (let [cursor (JSStateCursor. state set-state [])]
-   (build f cursor opts)))
+   (binding [*descriptor* pure-ext-descriptor] 
+     (build f cursor opts))))
 
 (defn detach-root
   "Given a DOM target remove its render loop if one exists."
