@@ -213,18 +213,18 @@
    render loop. An optional key or sequence of keys may be given to
    extract a specific value."
   ([owner]
-    (when-not (nil? owner)
-      (aget (.-props owner) "__om_shared")))
+   (when-not (nil? owner)
+     (aget (.-props owner) "__om_shared")))
   ([owner korks]
-    (cond
-      (not (sequential? korks))
-      (get (get-shared owner) korks)
+   (cond
+     (not (sequential? korks))
+     (get (get-shared owner) korks)
 
-      (empty? korks)
-      (get-shared owner)
+     (empty? korks)
+     (get-shared owner)
 
-      :else
-      (get-in (get-shared owner) korks))))
+     :else
+     (get-in (get-shared owner) korks))))
 
 (defn ^:private merge-pending-state [owner]
   (let [state (.-state owner)]
@@ -237,14 +237,14 @@
 (defn ^:private merge-props-state
   ([owner] (merge-props-state owner nil))
   ([owner props]
-    (let [props (or props (.-props owner))]
-      (when-let [props-state (aget props "__om_state")]
-        (let [state (.-state owner)]
-          (aset state "__om_pending_state"
-               (merge (or (aget state "__om_pending_state")
-                          (aget state "__om_state"))
-                      props-state))
-          (aset props "__om_state" nil))))))
+   (let [props (or props (.-props owner))]
+     (when-let [props-state (aget props "__om_state")]
+       (let [state (.-state owner)]
+         (aset state "__om_pending_state"
+              (merge (or (aget state "__om_pending_state")
+                         (aget state "__om_state"))
+                     props-state))
+         (aset props "__om_state" nil))))))
 
 (defn ref-changed? [ref]
   (let [val  (value ref)
@@ -407,33 +407,33 @@
     ISetState
     (-set-state!
       ([this val render]
-         (let [props     (.-props this)
-               app-state (aget props "__om_app_state")]
-           (aset (.-state this) "__om_pending_state" val)
-           (when (and (not (nil? app-state)) render)
-             (-queue-render! app-state this))))
+       (let [props     (.-props this)
+             app-state (aget props "__om_app_state")]
+         (aset (.-state this) "__om_pending_state" val)
+         (when (and (not (nil? app-state)) render)
+           (-queue-render! app-state this))))
       ([this ks val render]
-         (let [props     (.-props this)
-               state     (.-state this)
-               pstate    (-get-state this)
-               app-state (aget props "__om_app_state")]
-           (aset state "__om_pending_state" (assoc-in pstate ks val))
-           (when (and (not (nil? app-state)) render)
-             (-queue-render! app-state this)))))
+       (let [props     (.-props this)
+             state     (.-state this)
+             pstate    (-get-state this)
+             app-state (aget props "__om_app_state")]
+         (aset state "__om_pending_state" (assoc-in pstate ks val))
+         (when (and (not (nil? app-state)) render)
+           (-queue-render! app-state this)))))
     IGetRenderState
     (-get-render-state
       ([this]
-         (aget (.-state this) "__om_state"))
+       (aget (.-state this) "__om_state"))
       ([this ks]
-         (get-in (-get-render-state this) ks)))
+       (get-in (-get-render-state this) ks)))
     IGetState
     (-get-state
       ([this]
-         (let [state (.-state this)]
-           (or (aget state "__om_pending_state")
-               (aget state "__om_state"))))
+       (let [state (.-state this)]
+         (or (aget state "__om_pending_state")
+             (aget state "__om_state"))))
       ([this ks]
-         (get-in (-get-state this) ks)))))
+       (get-in (-get-state this) ks)))))
 
 (defn state-conv
   [state]
@@ -443,26 +443,26 @@
   (specify! obj
     ISetState
     (-set-state!
-      ([this val render]
-       (.setState this (clj->js val)))
-      ([this ks val render]
-       (js/console.log "State")
-       (js/console.log (.-state this))
-       (js/console.log (state-conv (.-state this)))
-       (let [state (state-conv (.-state this))]
-         (.setState this (clj->js (assoc-in state ks val))))))
+     ([this val render]
+      (aset (.-state this) "__om_state" val)
+      (when render
+        (.forceUpdate this)))
+     ([this ks val render]
+      (-set-state! this (assoc-in (-get-state this) ks val) render)))
+        
     IGetRenderState
     (-get-render-state
       ([this]
-       (state-conv (.-state this)))
+       (-get-state this))
+       
       ([this ks]
-         (get-in (state-conv (.-state this)) ks)))
+       (-get-state this ks)))
     IGetState
     (-get-state
      ([this]
-      (state-conv (.-state this)))
+      (aget (.-state this) "__om_state"))
      ([this ks]
-      (get-in (state-conv (.-state this)) ks)))))
+      (get-in (-get-state this) ks)))))
 
 (def pure-descriptor
   (specify-state-methods! (clj->js pure-methods)))
@@ -471,9 +471,9 @@
   (specify-state-ext-methods! (clj->js (dissoc (assoc pure-methods
                                                       :getInitialState (fn [] 
                                                                          (this-as this
-                                                                                  (let [c (children this)]
-                                                                                    (when (satisfies? IInitState c)
-                                                                                      (clj->js (init-state c))))))) :componentWillMount))))
+                                                                                  #js {:__om_state (let [c (children this)]
+                                                                                                     (when (satisfies? IInitState c)
+                                                                                                       (init-state c)))}))) :componentWillMount))))
 
 ;; =============================================================================
 ;; EXPERIMENTAL: No Local State
@@ -559,53 +559,53 @@
                (-get-state this)))))
        (no-local-merge-pending-state this)
        (update-refs this)))
-    :componentDidUpdate
-    (fn [prev-props prev-state]
-      (this-as this
-        (let [c      (children this)
-              gstate (get-gstate this)
-              states (get-in @gstate [:state-map (react-id this)])
-              spath  [:state-map (react-id this)]]
-          (when (satisfies? IDidUpdate c)
-            (let [state (.-state this)]
-              (did-update c
-                (get-props #js {:props prev-props :isOmComponent true})
-                (or (:previous-state states)
-                    (:render-state states)))))
-          (when (:previous-state states)
-            (swap! gstate update-in spath dissoc :previous-state)))))))
+   :componentDidUpdate
+   (fn [prev-props prev-state]
+     (this-as this
+       (let [c      (children this)
+             gstate (get-gstate this)
+             states (get-in @gstate [:state-map (react-id this)])
+             spath  [:state-map (react-id this)]]
+         (when (satisfies? IDidUpdate c)
+           (let [state (.-state this)]
+             (did-update c
+               (get-props #js {:props prev-props :isOmComponent true})
+               (or (:previous-state states)
+                   (:render-state states)))))
+         (when (:previous-state states)
+           (swap! gstate update-in spath dissoc :previous-state)))))))
 
 (defn no-local-descriptor [methods]
   (specify! (clj->js methods)
     ISetState
     (-set-state!
       ([this val render]
-         (let [gstate (get-gstate this)
-               spath  [:state-map (react-id this) :pending-state]]
-           (swap! (get-gstate this) assoc-in spath val)
-           (when (and (not (nil? gstate)) render)
-             (-queue-render! gstate this))))
+       (let [gstate (get-gstate this)
+             spath  [:state-map (react-id this) :pending-state]]
+         (swap! (get-gstate this) assoc-in spath val)
+         (when (and (not (nil? gstate)) render)
+           (-queue-render! gstate this))))
       ([this ks val render]
-         (-set-state! this (assoc-in (-get-state this) ks val) render)))
+       (-set-state! this (assoc-in (-get-state this) ks val) render)))
     IGetRenderState
     (-get-render-state
       ([this]
-         (let [spath [:state-map (react-id this) :render-state]]
-           (get-in @(get-gstate this) spath)))
+       (let [spath [:state-map (react-id this) :render-state]]
+         (get-in @(get-gstate this) spath)))
       ([this ks]
-         (get-in (-get-render-state this) ks)))
+       (get-in (-get-render-state this) ks)))
     IGetState
     (-get-state
       ([this]
-        (if (mounted? this)
-          (let [spath [:state-map (react-id this)]
+       (if (mounted? this)
+         (let [spath [:state-map (react-id this)]
                states (get-in @(get-gstate this) spath)]
-            (or (:pending-state states)
-                (:render-state states)))
-          ;; TODO: means state cannot be written to until mounted - David
-          (aget (.-props this) "__om_init_state")))
+           (or (:pending-state states)
+               (:render-state states)))
+         ;; TODO: means state cannot be written to until mounted - David
+         (aget (.-props this) "__om_init_state")))
       ([this ks]
-         (get-in (-get-state this) ks)))))
+       (get-in (-get-state this) ks)))))
 
 ;; =============================================================================
 ;; Cursors
@@ -857,13 +857,13 @@
   ([val] (to-cursor val nil []))
   ([val state] (to-cursor val state []))
   ([val state path]
-    (cond
-      (cursor? val) val
-      (satisfies? IToCursor val) (-to-cursor val state path)
-      (indexed? val) (IndexedCursor. val state path)
-      (map? val) (MapCursor. val state path)
-      (satisfies? ICloneable val) (to-cursor* val state path)
-      :else val)))
+   (cond
+     (cursor? val) val
+     (satisfies? IToCursor val) (-to-cursor val state path)
+     (indexed? val) (IndexedCursor. val state path)
+     (map? val) (MapCursor. val state path)
+     (satisfies? ICloneable val) (to-cursor* val state path)
+     :else val)))
 
 (defn notify* [cursor tx-data]
   (let [state (-state cursor)]
@@ -1235,91 +1235,91 @@
      {:message :hello}
      {:target js/document.body})"
   ([f value {:keys [target tx-listen path instrument descriptor adapt raf] :as options}]
-    (assert (ifn? f) "First argument must be a function")
-    (assert (not (nil? target)) "No target specified to om.core/root")
+   (assert (ifn? f) "First argument must be a function")
+   (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
-    (let [roots' @roots]
-      (when (contains? roots' target)
-        ((get roots' target))))
-    (let [watch-key (gensym)
-          state (if (satisfies? IAtom value)
-                  value
-                  (atom value))
-          state (setup state watch-key tx-listen)
-          adapt (or adapt identity)
-          m     (dissoc options :target :tx-listen :path :adapt :raf)
-          ret   (atom nil)
-          rootf (fn rootf []
-                  (swap! refresh-set disj rootf)
-                  (let [value  @state
-                        cursor (adapt
-                                (tag-root-key
-                                 (if (nil? path)
-                                   (to-cursor value state [])
-                                   (to-cursor (get-in value path) state path))
-                                 watch-key))]
-                    (when-not (-get-property state watch-key :skip-render-root)
-                      (-set-property! state watch-key :skip-render-root true)
-                      (let [c (dom/render
-                                (binding [*descriptor* descriptor
-                                          *instrument* instrument
-                                          *state*      state
-                                          *root-key*   watch-key]
-                                  (build f cursor m))
-                                  target)]
-                        (when (nil? @ret)
-                          (reset! ret c))))
-                    ;; update state pass
-                    (let [queue (-get-queue state)]
-                      (-empty-queue! state)
-                      (when-not (empty? queue)
-                        (doseq [c queue]
-                          (when (.isMounted c)
-                            (when-let [next-props (aget (.-state c) "__om_next_cursor")]
-                              (aset (.-props c) "__om_cursor" next-props)
-                              (aset (.-state c) "__om_next_cursor" nil))
-                            (when (or (not (satisfies? ICheckState (children c)))
-                                      (.shouldComponentUpdate c (.-props c) (.-state c)))
-                              (.forceUpdate c))))))
-                    ;; ref cursor pass
-                    (let [_refs @_refs]
-                      (when-not (empty? _refs)
-                        (doseq [[path cs] _refs]
-                          (let [cs @cs]
-                            (doseq [[id c] cs]
-                              (when (.shouldComponentUpdate c (.-props c) (.-state c))
-                                (.forceUpdate c)))))))
-                    @ret))]
-      (add-watch state watch-key
-        (fn [_ _ o n]
-          (when (and (not (-get-property state watch-key :ignore))
-                     (not (identical? o n)))
-            (-set-property! state watch-key :skip-render-root false))
-          (-set-property! state watch-key :ignore false)
-          (when-not (contains? @refresh-set rootf)
-            (swap! refresh-set conj rootf))
-          (when-not refresh-queued
-            (set! refresh-queued true)
-            (cond
-              (fn? raf)
-              (raf)
+   (let [roots' @roots]
+     (when (contains? roots' target)
+       ((get roots' target))))
+   (let [watch-key (gensym)
+         state (if (satisfies? IAtom value)
+                 value
+                 (atom value))
+         state (setup state watch-key tx-listen)
+         adapt (or adapt identity)
+         m     (dissoc options :target :tx-listen :path :adapt :raf)
+         ret   (atom nil)
+         rootf (fn rootf []
+                 (swap! refresh-set disj rootf)
+                 (let [value  @state
+                       cursor (adapt
+                               (tag-root-key
+                                (if (nil? path)
+                                  (to-cursor value state [])
+                                  (to-cursor (get-in value path) state path))
+                                watch-key))]
+                   (when-not (-get-property state watch-key :skip-render-root)
+                     (-set-property! state watch-key :skip-render-root true)
+                     (let [c (dom/render
+                               (binding [*descriptor* descriptor
+                                         *instrument* instrument
+                                         *state*      state
+                                         *root-key*   watch-key]
+                                 (build f cursor m))
+                               target)]
+                       (when (nil? @ret)
+                         (reset! ret c))))
+                   ;; update state pass
+                   (let [queue (-get-queue state)]
+                     (-empty-queue! state)
+                     (when-not (empty? queue)
+                       (doseq [c queue]
+                         (when (.isMounted c)
+                           (when-let [next-props (aget (.-state c) "__om_next_cursor")]
+                             (aset (.-props c) "__om_cursor" next-props)
+                             (aset (.-state c) "__om_next_cursor" nil))
+                           (when (or (not (satisfies? ICheckState (children c)))
+                                     (.shouldComponentUpdate c (.-props c) (.-state c)))
+                             (.forceUpdate c))))))
+                   ;; ref cursor pass
+                   (let [_refs @_refs]
+                     (when-not (empty? _refs)
+                       (doseq [[path cs] _refs]
+                         (let [cs @cs]
+                           (doseq [[id c] cs]
+                             (when (.shouldComponentUpdate c (.-props c) (.-state c))
+                               (.forceUpdate c)))))))
+                   @ret))]
+     (add-watch state watch-key
+       (fn [_ _ o n]
+         (when (and (not (-get-property state watch-key :ignore))
+                    (not (identical? o n)))
+           (-set-property! state watch-key :skip-render-root false))
+         (-set-property! state watch-key :ignore false)
+         (when-not (contains? @refresh-set rootf)
+           (swap! refresh-set conj rootf))
+         (when-not refresh-queued
+           (set! refresh-queued true)
+           (cond
+             (fn? raf)
+             (raf)
 
-              (or (false? raf)
-                  (not (exists? js/requestAnimationFrame)))
-              (js/setTimeout #(render-all state) 16)
+             (or (false? raf)
+                 (not (exists? js/requestAnimationFrame)))
+             (js/setTimeout #(render-all state) 16)
 
-              :else
-              (js/requestAnimationFrame #(render-all state))))))
-      ;; store fn to remove previous root render loop
-      (swap! roots assoc target
-        (fn []
-          (-remove-properties! state watch-key)
-          (remove-watch state watch-key)
-          (tear-down state watch-key)
-          (swap! refresh-set disj rootf)
-          (swap! roots dissoc target)
-          (js/ReactDOM.unmountComponentAtNode target)))
-      (rootf))))
+             :else
+             (js/requestAnimationFrame #(render-all state))))))
+     ;; store fn to remove previous root render loop
+     (swap! roots assoc target
+       (fn []
+         (-remove-properties! state watch-key)
+         (remove-watch state watch-key)
+         (tear-down state watch-key)
+         (swap! refresh-set disj rootf)
+         (swap! roots dissoc target)
+         (js/ReactDOM.unmountComponentAtNode target)))
+     (rootf))))
 
 (defn build-ext
   [f state set-state opts]
@@ -1391,10 +1391,10 @@
   "A helper function to get at React DOM refs. Given a owning pure node
   extract the DOM ref specified by name."
   ([owner]
-    (js/ReactDOM.findDOMNode owner))
+   (js/ReactDOM.findDOMNode owner))
   ([owner name]
-    {:pre [(string? name)]}
-    (some-> (.-refs owner) (aget name) (js/ReactDOM.findDOMNode))))
+   {:pre [(string? name)]}
+   (some-> (.-refs owner) (aget name) (js/ReactDOM.findDOMNode))))
 
 (defn get-ref
   "A helper function to get at React refs. Given an owning pure node extract
